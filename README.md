@@ -569,21 +569,6 @@ Need to change the general setting -(Go to project settings -> general -> Framew
 
 Please refer to the Ionic Capacitor sample kit code available on the Sanctum portal for integration, which includes the Airpay Framework. Ensure the following changes are applied to your project.
 
-### Info.plist - Adding below code 
-
-```
-<key>LSApplicationQueriesSchemes</key>
-    <array>
-      <string>phonepe</string>
-      <string>gpay</string>
-      <string>bhim</string>
-      <string>paytmmp</string>
-      <string>amazonToAlipay</string>
-      <string>whatsapp</string>
-      <string>credpay</string>
-      <string>mobikwik</string>
-    </array>
-```
 	
 ### AirpayDemoViewModel.swift file changes -
 
