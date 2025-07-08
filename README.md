@@ -58,7 +58,7 @@ npx cap sync ios
 ### Install the Airpay Plugin - (Ionic Capacitor v8)
 
 ```sh
-npm install https://github.com/Airpay2014/airpay-capacitor.git
+npm install https://github.com/Airpay2014/airpay-capacitor-V4-UAE.git
 ionic build
 ionic cap sync android
 ionic cap sync ios
@@ -89,28 +89,36 @@ Ensure internet permission is granted:
 Modify `MainActivity.java` to include Airpay imports:
 
 ```java
-package io.ionic.starter;
 
-import com.airpay.airpaysdk_simplifiedotp.AirpayConfig;
-import com.airpay.airpaysdk_simplifiedotp.constants.ConfigConstants;
-import com.airpay.airpaysdk_simplifiedotp.utils.Transaction;
-import com.airpay.airpaysdk_simplifiedotp.utils.Utils;
-import com.airpay.airpaysdk_simplifiedotp.view.ActionResultListener;
+
+
+import com.airpay.ae.AirpayConfig;
+import com.airpay.ae.constants.ConfigConstants;
+import com.airpay.ae.model.data.TransactionDto;
+import com.airpay.ae.utils.Utility;
+import com.airpay.ae.view.ActionResultListener;
 import com.airpay.plugins.mycustomplugin.AirpayPlugin;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.JSObject;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.WindowManager;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -124,102 +132,117 @@ import java.util.zip.CRC32;
 public class MainActivity extends BridgeActivity implements ActionResultListener {
   public ActivityResultLauncher<Intent> airpayLauncher;
 
+  private boolean doubleBackToExitPressedOnce = false;
 
+  private static final String TAG = "MainActivity";
+
+
+  private AlertDialog alertDialog;
   private BroadcastReceiver receiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
       if (AirpayPlugin.LOCAL_AIRPAY_BORADCAST_EVENT.equals(intent.getAction())) {
-        if (intent != null ) {
-        //  if (intent.getStringExtra("flag").equalsIgnoreCase("y")) {
+        if (intent != null) {
 
-        String requestData = intent.getStringExtra("request_data");
-        Log.d("requestData", requestData);
-        try {
-          // Convert jsonString to JSONObject
-          JSONObject outerJson = new JSONObject(requestData);
-          // Get the "value" field which contains the actual JSON string
-          String innerJsonString = outerJson.getString("value");
-          // Replace escaped quotes \" with actual quotes "
-          innerJsonString = innerJsonString.replace("\\\"", "\"");
-          // Convert to JSONObject
-          JSONObject innerJson = new JSONObject(innerJsonString);
+          String requestData = intent.getStringExtra("request_data");
+          Log.d("requestData", requestData);
+          try {
+            // Convert jsonString to JSONObject
+            JSONObject outerJson = new JSONObject(requestData);
+            // Get the "value" field which contains the actual JSON string
+            String innerJsonString = outerJson.getString("value");
+            // Replace escaped quotes \" with actual quotes "
+            innerJsonString = innerJsonString.replace("\\\"", "\"");
+            // Convert to JSONObject
+            JSONObject innerJson = new JSONObject(innerJsonString);
 
-          // Extract values
-          String firstName = innerJson.getString("firstName");
-          String lastName = innerJson.getString("lastName");
-          String email = innerJson.isNull("email") ? "" : innerJson.getString("email");
-          String address = innerJson.isNull("address") ? "" : innerJson.getString("address");
-          String city = innerJson.isNull("city") ? "" : innerJson.getString("city");
-          String state = innerJson.isNull("state") ? "" : innerJson.getString("state");
-          String phone = innerJson.isNull("phone") ? "" : innerJson.getString("phone");
-          String country = innerJson.isNull("country") ? "" : innerJson.getString("country");
-          String pincode = innerJson.isNull("pincode") ? "" : innerJson.getString("pincode");
-          String orderId = innerJson.getString("orderId");
-          String amount = innerJson.getString("amount");
-
-
-          DateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
-          String sCurDate1 = df1.format(new Date());
-
-          String sAllData1 = email + firstName
-            + lastName + address
-            + city + state
-            + country + amount
-            + orderId + sCurDate1;
+            // Extract values
+            String firstName = innerJson.getString("firstName");
+            String lastName = innerJson.getString("lastName");
+            String email = innerJson.isNull("email") ? "" : innerJson.getString("email");
+            String address = innerJson.isNull("fullAddress") ? "" : innerJson.getString("fullAddress");
+            String city = innerJson.isNull("city") ? "" : innerJson.getString("city");
+            String emirate = innerJson.isNull("emirate") ? "" : innerJson.getString("emirate");
+            String phone = innerJson.isNull("phone") ? "" : innerJson.getString("phone");
+            String country = innerJson.isNull("country") ? "" : innerJson.getString("country");
+            String pincode = innerJson.isNull("pincode") ? "" : innerJson.getString("pincode");
+            String orderId = innerJson.getString("orderId");
+            String amount = innerJson.getString("amount");
 
 
-          // Merchant Configuration details
-          String sMid = "";      //Please enter merchantid
-          String sSecret = "";   //Please enter secret key
-          String sUserName = ""; //Please enter username
-          String sPassword = ""; //Please enter password
-          // private key
-          String sTemp = sSecret + "@" + sUserName + ":|:" + sPassword;
-          String sPrivateKey = Utils.sha256(sTemp);
 
-          // key for checksum
-          String sTemp3 = sUserName + "~:~" + sPassword;
-          String sKey1 = Utils.sha256(sTemp3);
+            DateFormat df1 = new SimpleDateFormat("yyyy-MM-dd");
+            String sCurDate1 = df1.format(new Date());
 
-          // checksum
-          sAllData1 = sKey1 + "@" + sAllData1;
-          String sChecksum1 = Utils.sha256(sAllData1);
+            String sAllData1 = email + firstName
+              + lastName + address
+              + city + emirate
+              + country + amount
+              + orderId + sCurDate1;
 
-          new AirpayConfig.Builder(MainActivity.this, airpayLauncher)
-            .setEnvironment(ConfigConstants.PRODUCTION)
-            .setType(102)
-            .setPrivateKey(sPrivateKey)
-            .setMerchantId(sMid)
-            .setOrderId(orderId)
-            .setCurrency("356")
-            .setIsoCurrency("INR")
-            .setEmailId(email)
-            .setMobileNo(phone)
-            .setBuyerFirstName(firstName)
-            .setBuyerLastName(lastName)
-            .setBuyerAddress(address)
-            .setBuyerCity(city)
-            .setBuyerState(state)
-            .setBuyerCountry(country)
-            .setBuyerPinCode(pincode)
-            .setAmount(amount)
-            .setWallet("0")
-            .setCustomVar("")
-            .setTxnSubType("")
-            .setChmod("")
-            .setChecksum(sChecksum1)
-            .setSuccessUrl("") //Please enter success url
-            .setFailedUrl("")  //Please enter success url
-            .setLanguage("EN")
-            .build()
-            .initiatePayment();
-        
 
-        } catch (Exception e) {
-          e.printStackTrace();
+            // Merchant details
+
+            String sMid = "";
+            String sSecret = "";
+            String sUserName = "";
+            String sPassword = "";
+            String sClientId = "";
+            String sClient_secret = "";
+            String merdome = "";
+            String successUrl = "";
+            String failureUrl = "";
+
+            // private key
+            String sTemp = sSecret + "@" + sUserName + ":|:" + sPassword;
+            String sPrivateKey = Utility.sha256(sTemp);
+
+            // key for checksum
+            String sTemp3 = sUserName + "~:~" + sPassword;
+            String sKey1 = Utility.sha256(sTemp3);
+
+            // checksum
+            sAllData1 = sKey1 + "@" + sAllData1;
+            String sChecksum1 = Utility.sha256(sAllData1);
+
+            new AirpayConfig.Builder(airpayLauncher, MainActivity.this)
+              .setActionType("IndexPay")
+              .setEnvironment(ConfigConstants.STAGING)
+              .setType(ConfigConstants.AIRPAY_KIT)
+              .setPrivateKey(sPrivateKey)
+              .setSecretKey(sSecret)
+              .setMerchantId(sMid)
+              .setOrderId(orderId)
+              .setCurrency("784") // 784
+              .setIsoCurrency("AED") //
+              .setEmailId(email)
+              .setMobileNo(phone)
+              .setBuyerFirstName(firstName)
+              .setBuyerLastName(lastName)
+              .setBuyerAddress(address)
+              .setBuyerCity(city)
+              .setBuyerState(emirate)
+              .setBuyerCountry(country)
+              .setAmount(amount)
+              .setWallet("0")
+              .setChmod("")
+              .setChecksum(sChecksum1)
+              .setTxnsubtype("")
+              .setMerDom(merdome)
+              .setSuccessUrl(successUrl)
+              .setFailedUrl(failureUrl)
+              .setLanguage("EN")
+              .setClient_id(sClientId)
+              .setClient_secret(sClient_secret)
+              .setGrant_type("client_credentials")
+              .setAesDesKey(sTemp3)
+              .build()
+              .initiatePayment();
+
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
         }
-    //  }
-    }
 
       }
     }
@@ -240,39 +263,65 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
         if (result.getResultCode() == RESULT_OK) {
           Intent data = result.getData();
           if (data != null) {
-            Transaction transaction = (Transaction) data.getSerializableExtra("response");
+            TransactionDto transaction = (TransactionDto) data.getParcelableExtra("transaction");
             if (transaction != null) {
-              Log.d("MyCustomPlugin", "Transaction status: " + transaction.getSTATUS());
-              Toast.makeText(this, "Transaction Status: " + transaction.getSTATUS(), Toast.LENGTH_SHORT).show();
+              Log.d("MyCustomPlugin", "Transaction status: " + transaction.getData().getTransactionStatus());
+              Toast.makeText(this, "Transaction Status: " + transaction.getData().getTransactionStatus(), Toast.LENGTH_SHORT).show();
 
               JSObject response = new JSObject();
-              response.put("STATUS", transaction.getSTATUS());
-              response.put("STATUSMSG", transaction.getSTATUSMSG());
-              response.put("TXN_MODE", transaction.getTXN_MODE());
-              response.put("TRANSACTIONID", transaction.getTRANSACTIONID());
-              response.put("TRANSACTIONAMT", transaction.getTRANSACTIONAMT());
-              response.put("TRANSACTIONSTATUS", transaction.getTRANSACTIONSTATUS());
-              response.put("MERCHANTTRANSACTIONID", transaction.getMERCHANTTRANSACTIONID());
-              response.put("MERCHANTPOSTTYPE", transaction.getMERCHANTPOSTTYPE());
-              response.put("MERCHANTKEY", transaction.getMERCHANTKEY());
-              response.put("SECUREHASH", transaction.getSECUREHASH());
-              response.put("CUSTOMVAR", transaction.getCUSTOMVAR());
-              response.put("TXN_DATE_TIME", transaction.getTXN_DATE_TIME());
-              response.put("TXN_CURRENCY_CODE", transaction.getTXN_CURRENCY_CODE());
-              response.put("TRANSACTIONVARIANT", transaction.getTRANSACTIONVARIANT());
-              response.put("CHMOD", transaction.getCHMOD());
-              response.put("BANKNAME", transaction.getBANKNAME());
-              response.put("CARDISSUER", transaction.getCARDISSUER());
-              response.put("FULLNAME", transaction.getFULLNAME());
-              response.put("EMAIL", transaction.getEMAIL());
-              response.put("CONTACTNO", transaction.getCONTACTNO());
-              response.put("ISRISK", transaction.getISRISK());
-              response.put("MERCHANT_NAME", transaction.getMERCHANT_NAME());
-              response.put("SETTLEMENT_DATE", transaction.getSETTLEMENT_DATE());
-              response.put("SURCHARGE", transaction.getSURCHARGE());
-              response.put("BILLEDAMOUNT", transaction.getBILLEDAMOUNT());
-              response.put("CUSTOMERVPA", transaction.getCUSTOMERVPA());
+              response.put("STATUS", transaction.getStatus());
+              response.put("STATUSMSG", transaction.getMessage());
+              response.put("TXN_MODE", transaction.getData().getTxnMode());
+              response.put("TRANSACTIONID", transaction.getData().getApTransactionid());
+              response.put("TRANSACTIONAMT", transaction.getData().getAmount());
+              response.put("TRANSACTIONSTATUS", transaction.getData().getTransactionStatus());
+              response.put("MERCHANTTRANSACTIONID", transaction.getData().getMerchantId());
+             // response.put("MERCHANTPOSTTYPE", transaction.getMERCHANTPOSTTYPE());
+              response.put("MERCHANTKEY", transaction.getData().getMerchantId());
+              response.put("SECUREHASH", transaction.getData().getApSecurehash());
+              response.put("CUSTOMVAR", transaction.getData().getCustomVar());
+              response.put("TXN_DATE_TIME", transaction.getData().getTransactionTime());
+              response.put("TXN_CURRENCY_CODE", transaction.getData().getCurrencyCode());
+              response.put("TRANSACTIONVARIANT", transaction.getData().getTransactionType());
+              response.put("CHMOD", transaction.getData().getChmod());
+              response.put("bankResponseMsg", transaction.getData().getBankResponseMsg());
+              response.put("transactionPaymentStatus", transaction.getData().getTransactionPaymentStatus());
+            //  response.put("BANKNAME", transaction.getBANKNAME());
+             // response.put("CARDISSUER", transaction.getCARDISSUER());
+              response.put("FULLNAME", transaction.getData().getCustomerName());
+              response.put("EMAIL", transaction.getData().getCustomerEmail());
+              response.put("CONTACTNO", transaction.getData().getCustomerPhone());
+              response.put("ISRISK", transaction.getData().getRisk());
+            //  response.put("MERCHANT_NAME", transaction.getMERCHANT_NAME());
+             // response.put("SETTLEMENT_DATE", transaction.getSETTLEMENT_DATE());
+              response.put("SURCHARGE", transaction.getData().getSurchargeAmount());
+             // response.put("BILLEDAMOUNT", transaction.getBILLEDAMOUNT());
+           //   response.put("CUSTOMERVPA", transaction.getCUSTOMERVPA());
 
+              String orderId = transaction.getData().getOrderid();
+              String apTransactionID = transaction.getData().getApTransactionid();
+              String amount = transaction.getData().getAmount();
+              int transtatus = transaction.getData().getTransactionStatus();
+              String transactionPaymentStatus = transaction.getData().getTransactionPaymentStatus();
+
+
+
+              String merchantid = ""; //Please enter Merchant Id
+              String username = "";	  //Please enter Username
+			  
+              String sParam = orderId + ":" + apTransactionID + ":" + amount + ":" + transtatus + ":" + transactionPaymentStatus + ":" + merchantid + ":" + username;
+              CRC32 crc = new CRC32();
+              crc.update(sParam.getBytes());
+              String sCRC = "" + crc.getValue();
+              Log.e("Verified Hash ==", "sParam= " + sParam);
+              Log.e("Verified Hash ==", "Calculate Hash= " + sCRC);
+              Log.e("Verified Hash ==", "RESP Secure Hash= " + transaction.getData().getApSecurehash());
+
+              if (sCRC.equalsIgnoreCase(transaction.getData().getApSecurehash())) {
+                Log.e("Verified Hash ==", "SECURE HASH MATCHED");
+              } else {
+                Log.e("Verified Hash ==", "SECURE HASH MIS-MATCHED");
+              }
 
               AirpayPlugin.resolvePaymentResult(response.toString());
 
@@ -294,6 +343,34 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
 
   }
 
+  @SuppressLint("MissingSuperCall")
+  @Override
+  public void onBackPressed() {
+    if (doubleBackToExitPressedOnce) {
+      finishAffinity(); // Closes the app
+      return;
+    }
+
+    this.doubleBackToExitPressedOnce = true;
+    Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+
+    new Handler().postDelayed(() -> doubleBackToExitPressedOnce = false, 2000);
+
+  }
+
+  public String appendDecimal(String input) {
+    if (input == null || input.isEmpty()) {
+      return "0.00"; // Default value for empty input
+    }
+
+    // Check if input already has a decimal
+    if (!input.contains(".")) {
+      return input + ".00"; // Append .00 if no decimal exists
+    }
+
+    return input; // Return as-is if it already has a decimal
+  }
+
   @Override
   public void onResume() {
     super.onResume();
@@ -309,109 +386,86 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
 
   @Override
   public void onResult(Object o) {
-    if (o instanceof Transaction) {
-      Transaction transaction = (Transaction) o;
+    if (o instanceof TransactionDto) {
+      TransactionDto transaction = (TransactionDto) o;
 
-      Toast.makeText(MainActivity.this, transaction.getTRANSACTIONSTATUS() + "\n" + transaction.getSTATUSMSG(), Toast.LENGTH_LONG).show();
-      if (transaction.getSTATUS() != null) {
-        Log.e("STATUS -> ", "=" + transaction.getSTATUS());
+      Toast.makeText(MainActivity.this, transaction.getData().getTransactionStatus() + "\n" + transaction.getMessage(), Toast.LENGTH_LONG).show();
+      if (transaction.getStatus() != null) {
+        Log.e("STATUS -> ", "=" + transaction.getStatus());
       }
-      if (transaction.getMERCHANTKEY() != null) {
-        Log.e("MERCHANT KEY -> ", "=" + transaction.getMERCHANTKEY());
+      if (transaction.getData().getMerchant_key() != null) {
+        Log.e("MERCHANT KEY -> ", "=" + transaction.getData().getMerchant_key());
       }
-      if (transaction.getMERCHANTPOSTTYPE() != null) {
-        Log.e("MERCHANT POST TYPE ", "=" +
-          transaction.getMERCHANTPOSTTYPE());
+      if (transaction.getData().getAmount() != null) {
+        Log.e("TRANSACTION AMT -> ", "=" + transaction.getData().getAmount());
       }
-      if (transaction.getSTATUSMSG() != null) {
-        Log.e("STATUS MSG -> ", "=" + transaction.getSTATUSMSG()); // success or fail
+      if (transaction.getData().getTxnMode() != null) {
+        Log.e("TXN MODE -> ", "=" + transaction.getData().getTxnMode());
       }
-      if (transaction.getTRANSACTIONAMT() != null) {
-        Log.e("TRANSACTION AMT -> ", "=" + transaction.getTRANSACTIONAMT());
+      if (transaction.getData().getApTransactionid() != null) {
+        Log.e("MERCHANT_TXN_ID -> ", "=" + transaction.getData().getApTransactionid()); // order id
       }
-      if (transaction.getTXN_MODE() != null) {
-        Log.e("TXN MODE -> ", "=" + transaction.getTXN_MODE());
+      if (transaction.getData().getApSecurehash() != null) {
+        Log.e("SECURE HASH -> ", "=" + transaction.getData().getApSecurehash());
       }
-      if (transaction.getMERCHANTTRANSACTIONID() != null) {
-        Log.e("MERCHANT_TXN_ID -> ", "=" + transaction.getMERCHANTTRANSACTIONID()); // order id
+      if (transaction.getData().getCustomVar() != null) {
+        Log.e("CUSTOMVAR -> ", "=" + transaction.getData().getCustomVar());
       }
-      if (transaction.getSECUREHASH() != null) {
-        Log.e("SECURE HASH -> ", "=" + transaction.getSECUREHASH());
+      if (transaction.getData().getApTransactionid() != null) {
+        Log.e("Order ID -> ", "=" + transaction.getData().getApTransactionid());
       }
-      if (transaction.getCUSTOMVAR() != null) {
-        Log.e("CUSTOMVAR -> ", "=" + transaction.getCUSTOMVAR());
+      if (transaction.getData().getTransactionStatus() != 0) {
+        Log.e("TXN STATUS -> ", "=" + transaction.getData().getTransactionStatus());
       }
-      if (transaction.getTRANSACTIONID() != null) {
-        Log.e("TXN ID -> ", "=" + transaction.getTRANSACTIONID());
+      if (transaction.getData().getTransactionTime() != null) {
+        Log.e("TXN_DATETIME -> ", "=" + transaction.getData().getTransactionTime());
       }
-      if (transaction.getTRANSACTIONSTATUS() != null) {
-        Log.e("TXN STATUS -> ", "=" + transaction.getTRANSACTIONSTATUS());
+      if (transaction.getData().getCurrencyCode() != null) {
+        Log.e("TXN_CURRENCY_CODE -> ", "=" + transaction.getData().getCurrencyCode());
       }
-      if (transaction.getTXN_DATE_TIME() != null) {
-        Log.e("TXN_DATETIME -> ", "=" + transaction.getTXN_DATE_TIME());
-      }
-      if (transaction.getTXN_CURRENCY_CODE() != null) {
-        Log.e("TXN_CURRENCY_CODE -> ", "=" + transaction.getTXN_CURRENCY_CODE());
-      }
-      if (transaction.getTRANSACTIONVARIANT() != null) {
-        Log.e("TRANSACTIONVARIANT -> ", "=" + transaction.getTRANSACTIONVARIANT());
-      }
-      if (transaction.getCHMOD() != null) {
-        Log.e("CHMOD -> ", "=" + transaction.getCHMOD());
-      }
-      if (transaction.getBANKNAME() != null) {
-        Log.e("BANKNAME -> ", "=" + transaction.getBANKNAME());
-      }
-      if (transaction.getCARDISSUER() != null) {
-        Log.e("CARDISSUER -> ", "=" + transaction.getCARDISSUER());
-      }
-      if (transaction.getFULLNAME() != null) {
-        Log.e("FULLNAME -> ", "=" + transaction.getFULLNAME());
-      }
-      if (transaction.getEMAIL() != null) {
-        Log.e("EMAIL -> ", "=" + transaction.getEMAIL());
-      }
-      if (transaction.getCONTACTNO() != null) {
-        Log.e("CONTACTNO -> ", "=" + transaction.getCONTACTNO());
-      }
-      if (transaction.getMERCHANT_NAME() != null) {
-        Log.e("MERCHANT_NAME -> ", "=" + transaction.getMERCHANT_NAME());
-      }
-      if (transaction.getSETTLEMENT_DATE() != null) {
-        Log.e("SETTLEMENT_DATE -> ", "=" + transaction.getSETTLEMENT_DATE());
-      }
-      if (transaction.getSURCHARGE() != null) {
-        Log.e("SURCHARGE -> ", "=" + transaction.getSURCHARGE());
-      }
-      if (transaction.getBILLEDAMOUNT() != null) {
-        Log.e("BILLEDAMOUNT -> ", "=" + transaction.getBILLEDAMOUNT());
-      }
-      if (transaction.getISRISK() != null) {
-        Log.e("ISRISK -> ", "=" + transaction.getISRISK());
-      }
-      String transid = transaction.getMERCHANTTRANSACTIONID();
-      String apTransactionID = transaction.getTRANSACTIONID();
-      String amount = transaction.getTRANSACTIONAMT();
-      String transtatus = transaction.getTRANSACTIONSTATUS();
-      String message = transaction.getSTATUSMSG();
 
-      String customer_vpa = "";
-      if (!TextUtils.isEmpty(transaction.getCHMOD()) && transaction.getCHMOD().equalsIgnoreCase("upi")) {
-        customer_vpa = ":" + transaction.getCUSTOMERVPA();
-        Log.e("Verified Hash ==", "INSIDE CHMODE UPI CONSIDTION");
+      if (transaction.getData().getChmod() != null) {
+        Log.e("CHMOD -> ", "=" + transaction.getData().getChmod());
       }
+
+      if (transaction.getData().getCustomerName() != null) {
+        Log.e("FULLNAME -> ", "=" + transaction.getData().getCustomerName());
+      }
+      if (transaction.getData().getCustomerEmail() != null) {
+        Log.e("EMAIL -> ", "=" + transaction.getData().getCustomerEmail());
+      }
+      if (transaction.getData().getCustomerPhone() != null) {
+        Log.e("CONTACTNO -> ", "=" + transaction.getData().getCustomerPhone());
+      }
+
+      if (transaction.getData().getTransactionTime() != null) {
+        Log.e("SETTLEMENT_DATE -> ", "=" + transaction.getData().getTransactionTime());
+      }
+      if (transaction.getData().getSurchargeAmount() != null) {
+        Log.e("SURCHARGE -> ", "=" + transaction.getData().getSurchargeAmount());
+      }
+      if (transaction.getData().getRisk() != null) {
+        Log.e("ISRISK -> ", "=" + transaction.getData().getRisk());
+      }
+      String orderId = transaction.getData().getOrderid();
+      String apTransactionID = transaction.getData().getApTransactionid();
+      String amount = transaction.getData().getAmount();
+      int transtatus = transaction.getData().getTransactionStatus();
+      String transactionPaymentStatus = transaction.getData().getTransactionPaymentStatus();
+
+
 
       String merchantid = ""; //Please enter Merchant Id
-      String username = "";   //Please enter Username
-      String sParam = transid + ":" + apTransactionID + ":" + amount + ":" + transtatus + ":" + message + ":" + merchantid + ":" + username + customer_vpa;
+      String username = "";   //Please enter username
+      String sParam = orderId + ":" + apTransactionID + ":" + amount + ":" + transactionPaymentStatus + ":" + transtatus + ":" + merchantid + ":" + username;
       CRC32 crc = new CRC32();
       crc.update(sParam.getBytes());
       String sCRC = "" + crc.getValue();
       Log.e("Verified Hash ==", "sParam= " + sParam);
       Log.e("Verified Hash ==", "Calculate Hash= " + sCRC);
-      Log.e("Verified Hash ==", "RESP Secure Hash= " + transaction.getSECUREHASH());
+      Log.e("Verified Hash ==", "RESP Secure Hash= " + transaction.getData().getApSecurehash());
 
-      if (sCRC.equalsIgnoreCase(transaction.getSECUREHASH())) {
+      if (sCRC.equalsIgnoreCase(transaction.getData().getApSecurehash())) {
         Log.e("Verified Hash ==", "SECURE HASH MATCHED");
       } else {
         Log.e("Verified Hash ==", "SECURE HASH MIS-MATCHED");
@@ -421,7 +475,14 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
 
   }
 
+  @Override
+  public void onFailure(String s) {
+    Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+  }
+
 }
+
+
 
 ```
 
@@ -430,12 +491,14 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
 Add the following dependencies:
 
 ```gradle
-implementation("com.airpay:Airpay-India-Kit:1.0.1") {
+
+implementation("com.airpay:airpay-uae-kit:1.0.6"){
     exclude group: 'androidx.core', module: 'core'
     // or
     exclude group: 'androidx.legacy', module: 'legacy-support-v4'
-}
-implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+  }
+  implementation 'androidx.multidex:multidex:2.0.1'
+  
 ```
 
 ### build.gradle (project-level)
@@ -445,14 +508,14 @@ Note:- For the username and password , please refer the ionic capacitor kit on s
 
 ```gradle
 maven { url 'https://maven.google.com' }
-maven {
-    url 'https://gitlab.com/api/v4/projects/60989340/packages/maven'
-    name "GitLab"
-    credentials {
-        username "" // Enter Username
-        password "" // Enter Access Token
+  maven {
+      url "https://gitlab.com/api/v4/projects/68861779/packages/maven"
+      name = "GitLab"
+      credentials {
+        username = ""
+        password = ""
+      }
     }
-}
 ```
 
 ### gradle.properties
@@ -474,9 +537,12 @@ String sMid = ""; // Enter Merchant ID
 String sSecret = ""; // Enter Secret Key
 String sUserName = ""; // Enter Username
 String sPassword = ""; // Enter Password
+String client_id = ""; //please enter client id
+String client_secret = ""; //please enter client secret
 
 .setSuccessUrl("") // Enter Success URL
 .setFailedUrl("") // Enter Failed URL
+.setMerDom("") //Enter Success URL Domain
 ```
 
 ### Angular Code - home.page.ts
@@ -529,7 +595,10 @@ Need to configured the Merchant Configuration details inside the AirpayDemoViewM
     @Published var kAirPayUserName: String = ""  //(Enter the Username value)
     @Published var kAirPayPassword: String = ""  //(Enter the Password value)
     @Published var successURL: String = ""       //(Enter the Success url value)
-	  @Published var merchantID:String = ""        //(Enter the Merchant Id value)
+	@Published var merchantID:String = ""        //(Enter the Merchant Id value)
+	@Published var client_secret:String = ""   //(Enter the Client_secret Id value)
+	@Published var client_id:String = ""	   //(Enter the Client Id value)	
+	
 ```
 	
 Refer the PrivateKey function -
@@ -548,7 +617,7 @@ Refer the Checksum Calculation function inside the AirpayDemoViewModel.swift
  
 ```
 
-func getCheckSum(privateKey:String, currentDate:String,email:String,firstName:String,lastName:String,address:String,city:String,state:String,country:String,orderID:String,amount:String) -> String {
+ func getCheckSum(privateKey:String, currentDate:String,email:String,firstName:String,lastName:String,address:String,city:String,state:String,country:String,orderID:String,amount:String) -> String {
     
       let stringAll = "\(email)\(firstName)\(lastName)\(address )\(city)\(state)\(country)\(amount)\(orderID)\(currentDate)"
       
@@ -568,64 +637,8 @@ func getCheckSum(privateKey:String, currentDate:String,email:String,firstName:St
 
 ### Response handling will be managed by the finishPayment() method - 
 
-Note :- AirPayDelegate class was extended to the AirpayDemoViewModel.swift class hence we are able to get the finishPayment method on AirpayDemoViewModel.swift class
+#### Note :- AirPayDelegate class was extended to the AirpayDemoViewModel.swift class hence we are able to get the finishPayment method on AirpayDemoViewModel.swift class
 
-```	
-    // Delegate method to call when payment finishes
-    func finishPayment(success: Bool, response: [String: Any]?, error: Error?) {
-        // Extract values from the response
-        let status = response?["TRANSACTIONSTATUS"] as? String ?? ""
-        let chmod = response?["CHMOD"] as? String ?? ""
-        var customerVPA = ""
-        
-        if chmod == "upi" {
-            customerVPA = ":" + (response?["CUSTOMERVPA"] as? String ?? "")
-        }
-        
-        let apSecureHash = response?["AP_SECUREHASH"] as? String ?? ""
-        let transID = response?["MERCHANTTRANSACTIONID"] as? String ?? ""
-        let apTransactionID = response?["TRANSACTIONID"] as? String ?? ""
-        let transactionAmount = response?["TRANSACTIONAMT"] as? String ?? ""
-        let transactionStatus = response?["TRANSACTIONSTATUS"] as? String ?? ""
-        let statusMsg = response?["STATUSMSG"] as? String ?? ""
-        
-        let strParam = "\(transID)" + ":" + "\(apTransactionID)" + ":" + "\(transactionAmount)" + ":" + "\(transactionStatus)" + ":" + "\(statusMsg)" + ":" + "\(merchantID)" + ":" + "\(kAirPayUserName)\(customerVPA)"
-        
-        print("Parameter String: \(strParam)")
-        
-        let crc32Str = strParam.data(using: .utf8)
-        let calculatedHash = crc32Str?.withUnsafeBytes {
-            crc32(0, $0.bindMemory(to: Bytef.self).baseAddress, numericCast(crc32Str?.count ?? 0))
-        }
-        
-        let sCRC = "\(calculatedHash ?? 0)"
-        print("Calculated Hash: \(sCRC)")
-        print("AP Secure Hash: \(apSecureHash)")
-        
-        var upiStatus = ""
-        if sCRC == apSecureHash {
-            print("Secure hash matched")
-            upiStatus = "SECURE HASH MATCHED"
-        } else {
-            print("Secure hash mismatch")
-            upiStatus = "SECURE HASH MIS-MATCHED"
-        }
-        
-        // Update SwiftUI state variables
-        DispatchQueue.main.async {
-            self.isPresentingWebView = false
-                if success {
-                    self.alertTitle = status
-                    self.alertMessage = "\(String(describing: response)) \(upiStatus)"
-                } else {
-                    self.alertTitle = "status"
-                    self.alertMessage = "\(String(describing: response)) \(upiStatus)"
-                }
-            }
-        showTransactionAlert = true
-    }  
-
-```	
 
 Note:- Securehash logic was mentioned inside the finishPayment method. Calculated securehash will be matched with securehash getting from the transaction response, By matching the securehash value we can validate the transaction response getting from the server.
 
@@ -636,141 +649,8 @@ If the securehash is mismatched then the reponse which received from server is i
 
 In this class, handleAirPayNotification method contains the logic to send the request parameters to the framework and also handling the response to the ionic app side using notification centre.
 
-Code logic - 
-```	
-
-import UIKit
-import SwiftUI
-import AirpayKitPlugin
-import Capacitor
-import Airpay_Kit_Swiftui
-@UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, AirPayDelegate {
-  var hasAlreadyHandledPayment = false
-  func finishPayment(success: Bool, response: [String: Any]?, error: (any Error)?) {
-          // Prevent duplicate calls
-          guard !hasAlreadyHandledPayment else { return }
-          hasAlreadyHandledPayment = true
-
-          var resultDict: [String: Any] = ["success": success]
-
-          if let response = response {
-              resultDict["response"] = response
-          }
-
-          if let error = error {
-              resultDict["error"] = error.localizedDescription
-          }
-
-          DispatchQueue.main.async {
-              // Close AirPay web view
-              self.window?.rootViewController?.dismiss(animated: true) {
-                  // Send response back to Ionic via NotificationCenter
-                  NotificationCenter.default.post(
-                      name: Notification.Name("PaymentResponse"),
-                      object: nil,
-                      userInfo: resultDict
-                  )
-                  print("PaymentResponse notification posted")
-
-                  // Reset flag after a delay (e.g., 1 sec) to allow new payments
-                  DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                      self.hasAlreadyHandledPayment = false
-                  }
-              }
-          }
-      }
-
-  
-  var window: UIWindow?
-  var paymentModel = AirpayDemoViewModel.shared
-  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-    // Override point for customization after application launch.
-    let bridge = CAPBridgeViewController()
-    bridge.bridge?.registerPluginType(AirpayPlugin.self)
-    NotificationCenter.default.addObserver(self, selector: #selector(handleAirPayNotification(_:)), name: Notification.Name("AirPayCall"), object: nil)
-    
-    return true
-  }
-  
-  
-  @objc func handleAirPayNotification(_ notification: Notification) {
-    DispatchQueue.main.async {
-      let today = Date()
-      let dateFormat = DateFormatter()
-      dateFormat.dateFormat = "yyyy-MM-dd"
-      let sCurrentDate = dateFormat.string(from: today)
-      
-      
-      
-      
-      guard let userInfo = notification.userInfo as? [String: Any] else {
-        print("No userInfo found in notification")
-        return
-      }
-      print(userInfo)
-      // Extract the parameters from userInfo
-      let email = userInfo["email"] as? String ?? ""
-      let phoneNumber = userInfo["phone"] as? String ?? ""
-      let orderID = userInfo["orderId"] as? String ?? ""
-      let amount = "\(userInfo["amount"] ?? 0)"
-      let firstName = userInfo["firstName"] as? String ?? ""
-      let lastName = userInfo["lastName"] as? String ?? ""
-      let address = userInfo["fullAddress"] as? String ?? ""
-      let city = userInfo["city"] as? String ?? ""
-      let state = userInfo["state"] as? String ?? ""
-      let country = userInfo["country"] as? String ?? ""
-      let pincode = userInfo["pincode"] as? String ?? ""
-      print(orderID)
-      print(amount)
-      let checksumStr = self.paymentModel.getCheckSum(privateKey: self.paymentModel.privateKey(), currentDate: sCurrentDate, email: email, firstName: firstName, lastName: lastName, address: address, city: city, state: state, country: country, orderID: orderID, amount: amount)
-      
-      DispatchQueue.main.async {
-        let airpayViewModel = AirPayWebViewModel(
-          envConfigString: "production",
-          email: email,
-          phoneNumber: phoneNumber,
-          orderID: orderID,
-          amount: amount,
-          secretAPIKey: self.paymentModel.kAirPaySecretKey,
-          successURL: self.paymentModel.successURL,
-          userName: self.paymentModel.kAirPayUserName,
-          password: self.paymentModel.kAirPayPassword,
-          privateKey: self.paymentModel.privateKey(),
-          checksumStr: checksumStr,
-          firstName: firstName,
-          lastName: lastName,
-          address: address,
-          city: city,
-          state: state,
-          country: country,
-          pincode: pincode,
-          mode: self.paymentModel.mode,
-          merchantID: self.paymentModel.merchantID,
-          customVariable: self.paymentModel.customVariable,
-          transactionSubType: self.paymentModel.transactionSubType,
-          currencyValue: self.paymentModel.currencyValue,
-          isoCurrency: self.paymentModel.isoCurrency,
-          wallet: self.paymentModel.wallet,
-          token: self.paymentModel.token,
-          delegate: self
-        )
-        // Present the AirPay WebView
-        let airpayWebView = AirPayWebView(viewModel: airpayViewModel)
-        let hostingController = UIHostingController(rootView: airpayWebView)
-        hostingController.modalPresentationStyle = .fullScreen
-        self.window?.rootViewController?.present(hostingController, animated: true, completion: nil)
-      }
-      
-    }
-  }
-  
-  
-}
+For detailed instructions and examples, please refer to the “SampleIonicCapacitor App” and the “Documents” folder included in the kit package.(Kindly refer Sanctum Portal Link)
  
-```	
-
-
 
 > **Note:** For merchant configuration details, please contact the Airpay Support Team.
 
