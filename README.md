@@ -213,8 +213,8 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
               .setSecretKey(sSecret)
               .setMerchantId(sMid)
               .setOrderId(orderId)
-              .setCurrency("784") // 784
-              .setIsoCurrency("AED") //
+              .setCurrency("784")
+              .setIsoCurrency("AED") 
               .setEmailId(email)
               .setMobileNo(phone)
               .setBuyerFirstName(firstName)
@@ -254,7 +254,7 @@ public class MainActivity extends BridgeActivity implements ActionResultListener
     registerPlugin(AirpayPlugin.class);
 
     super.onCreate(savedInstanceState);
-    // pluginCall = new AirpayPlugin();
+    
     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
     airpayLauncher = registerForActivityResult(
